@@ -131,6 +131,31 @@ def write_material(mat, stream):
     stream.write("\x04\x00\xee\xa2\x00\xff")
     write_null("BBBB", stream)
 
+def write_control_meshes(stream):
+
+    if binding is not None:
+        write_basic_mesh(binding, stream)
+
+    if floor is not None:
+        write_basic_mesh(floor, stream)
+
+    if wall is not None:
+        write_basic_mesh(wall, stream)
+
+    if land is not None:
+        write_basic_mesh(land, stream)
+
+    if mesh1 is not None:
+        write_basic_mesh(mesh1, stream)
+
+    if foundation is not None:
+        write_basic_mesh(foundation, stream)
+
+    if mesh2 is not None:
+        write_basic_mesh(mesh2, stream)
+
+
+
 def write_basic_mesh(mesh, stream):
     meshdata = mesh.getData()
     meshlog.write('\n> write_basic_mesh: "%s"' % meshdata.name)
@@ -278,6 +303,10 @@ def write_mesh(ob, stream):
 
 def save_msh(filename):
     global material_list, material_keys, meshlog
+    global binding, floor, wall, land, mesh1, foundation, mesh2
+
+
+
     time1 = Blender.sys.time()  #for timing purposes
 
     meshlog = open (filename + '.export.log', 'w')
@@ -291,6 +320,7 @@ def save_msh(filename):
     mesh_flags = [0,0,0,0,0,0,0,0]
     if Armature.Get() != {}:
         mesh_flags[0] = 1
+
     binding = None
     floor = None
     wall = None
@@ -314,26 +344,33 @@ def save_msh(filename):
 #        print 'Mesh: "%s" ' % (n)
 #        print 'DB: "%s" ' % (m.getData().name)
         if n.endswith('.binding'):
+            binding = m
             mesh_flags[2] |= 1
             control_list.append(m)
         elif n.endswith('.floor'):
+            floor = m
 #            print ':IsFloor'
             mesh_flags[6] |= 1
             control_list.append(m)
         elif n.endswith('.wall'):
+            wall = m
             mesh_flags[6] |= 8
             control_list.append(m)
         elif n.endswith('.land'):
+            land = m
 #            print ':IsLand'
             mesh_flags[5] |= 2
             control_list.append(m)
         elif n.endswith('.mesh1'):
+            mesh1 = m
             mesh_flags[6] |= 4
             control_list.append(m)
         elif n.endswith('.foundation'):
+            foundation = m
             mesh_flags[5] |= 4
             control_list.append(m)
         elif n.endswith('.mesh2'):
+            mesh2 = m
             mesh_flags[6] |= 16
             control_list.append(m)
 
@@ -384,56 +421,87 @@ def save_msh(filename):
     
     # ************ write image count *********** 
     stream.write(struct.pack("L", len(image_list)))
-    meshlog.write('(10L, %dL' % (len(image_list)))
-    
+    meshlog.write('\n\n---> msh_header')
+    meshlog.write('\nImages: %d' % (len(image_list)))
+
     # *********** write material count *********
     stream.write(struct.pack("L", len(material_keys)))
-    meshlog.write(', %dL' % (len(material_keys)))
-    
+    meshlog.write('\nMaterials: %d' % (len(material_keys)))
+
     # ********** write mesh count *************
     stream.write(struct.pack("L",len(mesh_list)))
-    meshlog.write(', %dL' % (len(mesh_list)))
+    meshlog.write('\nGroups: %d' % (len(mesh_list)))
+
+
+#    meshlog.write('\nBones: %s' % self.has_bones)
+#    meshlog.write('\nDeform: %d' % self.has_deform_groups)
+#    meshlog.write('\nAnchor: %d' % self.anchor_count)
+#     meshlog.write('\nBinding: %d' % self.has_binding)
+
+#    meshlog.write('\nFlags1:')
+#    meshlog.write('\n    HasLand (2): %s' % self.has_land)
+#    meshlog.write('\n    HasFoundation (4): %s' % self.has_foundation)
+#    meshlog.write('\n    HasLast (128): %s' % self.has_last)
+#    meshlog.write('\nFlags2:')
+#    meshlog.write('\n    HasFloor (1): %s' % self.has_floor)
+#    meshlog.write('\n    HasTransform (2): %s' % self.has_transform)
+#    meshlog.write('\n    HasMesh1 (4): %s' % self.has_mesh1)
+#    meshlog.write('\n    HasWall (8): %s' % self.has_wall)
+#    meshlog.write('\n    HasMesh2 (16): %s' % self.has_mesh2)
+#    meshlog.write('\n    HasRooms (64): %s' % self.has_rooms)
+#    meshlog.write('\n    HasSubmesh (128): %s' % self.has_submesh)
+#    meshlog.write('\nUnknown: %d' % self.unknown1)
 
     # why is all this commented? - ~T
-#    if group_classes != {}:
-    mesh_flags[7] = 1
+    if group_classes != {}:
+        mesh_flags[7] = 1
     
-#    if submesh_list != []:
-    mesh_flags[6] |= 128
+    if submesh_list != []:
+        mesh_flags[6] |= 128
         
-#    if room_list != []:
-    mesh_flags[6] |= 64
+    if room_list != []:
+        mesh_flags[6] |= 64
     
-#    if transform_list != []:
-    mesh_flags[6] |= 2
+    if transform_list != []:
+        mesh_flags[6] |= 2
     
     # ************* write flags ***************
     for flag in mesh_flags:
-#       print 'Trace: Flagdump: "%d"' % (flag)
-	meshlog.write(', "%d"' % (flag))
+	meshlog.write('\n   Field: %d' % (flag))
         stream.write(struct.pack("B", flag))
         
-    #if transform_list != []:
-    # ******* write transform count *******
-    stream.write(struct.pack("L", len(transform_list)))
-    meshlog.write(', %dL' % (len(transform_list)))
-    #if submesh_list != []:
-    # ******** write submesh count ********
-    stream.write(struct.pack("L", len(submesh_list)))
-    meshlog.write(', %dL' % (len(submesh_list)))
-    #if room_list != []:
-    # ********** write room count *********
-    stream.write(struct.pack("L", len(room_list)))
-    meshlog.write(', %dL' % (len(room_list)))
+    if transform_list != []:
+	# ******* write transform count *******
+	stream.write(struct.pack("L", len(transform_list)))
+	meshlog.write('\nTransform: %d' % (len(transform_list)))
+
+    if submesh_list != []:
+	# ******** write submesh count ********
+	stream.write(struct.pack("L", len(submesh_list)))
+	meshlog.write('\nSubmesh: %d' % (len(submesh_list)))
+
+    if room_list != []:
+	# ********** write room count *********
+	stream.write(struct.pack("L", len(room_list)))
+	meshlog.write('\nRooms: %d' % (len(room_list)))
+
+    meshlog.write('\n<--- msh_header\n\n')
+
 
     for i in image_list:
         fn = os.path.basename(i).replace(".png",".dds")
         write_nts(fn, stream)
+
     for mat in material_list:
         write_material(mat, stream)
+
     meshlog.write('\n>> Control Meshes')
-    for c in control_list:
-        write_basic_mesh(c, stream)
+
+    write_control_meshes(stream)
+
+# This could potentially be in the wrong order.
+#    for c in control_list:
+#        write_basic_mesh(c, stream)
 
     meshlog.write('\n>> Room List')
     for n in room_list:

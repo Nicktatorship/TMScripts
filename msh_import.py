@@ -246,7 +246,6 @@ class msh_header(decoder):
             print "Not a valid mesh file"
             return
             
-	meshlog.write('Stream: "%s"' % (stream))
         if self.has_transform:
             self.transform_count = read_item("L", stream)
         else:
@@ -261,6 +260,32 @@ class msh_header(decoder):
             self.room_count = read_item("L", stream)
         else:
             self.room_count = 0
+
+	meshlog.write('\n\n---> msh_header')
+        meshlog.write('\nImages: %d' % self.image_count)
+        meshlog.write('\nMaterials: %d' % self.material_count)
+        meshlog.write('\nGroups: %d' % self.group_count)
+        meshlog.write('\nBones: %s' % self.has_bones)
+        meshlog.write('\nDeform: %d' % self.has_deform_groups)
+        meshlog.write('\nAnchor: %d' % self.anchor_count)
+        meshlog.write('\nBinding: %d' % self.has_binding)
+        meshlog.write('\nFlags1:')
+        meshlog.write('\n    HasLand (2): %s' % self.has_land)
+        meshlog.write('\n    HasFoundation (4): %s' % self.has_foundation)
+        meshlog.write('\n    HasLast (128): %s' % self.has_last)
+        meshlog.write('\nFlags2:')
+        meshlog.write('\n    HasFloor (1): %s' % self.has_floor)
+        meshlog.write('\n    HasTransform (2): %s' % self.has_transform)
+        meshlog.write('\n    HasMesh1 (4): %s' % self.has_mesh1)
+        meshlog.write('\n    HasWall (8): %s' % self.has_wall)
+        meshlog.write('\n    HasMesh2 (16): %s' % self.has_mesh2)
+        meshlog.write('\n    HasRooms (64): %s' % self.has_rooms)
+        meshlog.write('\n    HasSubmesh (128): %s' % self.has_submesh)
+        meshlog.write('\nUnknown: %d' % self.unknown1)
+        meshlog.write('\nTransform: %d' % self.transform_count)
+        meshlog.write('\nSubmesh: %d' % self.submesh_count)
+        meshlog.write('\nRooms: %d' % self.room_count)
+	meshlog.write('\n<--- msh_header\n\n')
 
 class mesh_header(decoder):
     _struct = "LLLBBBB"
@@ -497,7 +522,6 @@ def load_msh (filename):
     imagedir = os.path.join(basedir,"textures")
     scene = Blender.Scene.getCurrent()
 
-    meshlog.write('> msh_header\n')
     header = msh_header(stream)
 
     meshlog.write('\n===========================\n')
